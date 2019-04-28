@@ -8,7 +8,7 @@ This project was developed to parse DOCX files. The application will read the fi
 `cd docx-parser-halfway-to-history`
 `pip install requirements.txt`
 
-## Run
+## Usage
 
 `./app.py -y <Chapter Year> -c <Chapter Title> -f <Path To DocX File>`  
 `./app.py -y 1988 -c "THE WANING OF THE COLD WAR" -f ~/H2HDocs/H2H-chapter-one-1988.docx`  
