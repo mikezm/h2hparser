@@ -177,7 +177,6 @@ def read_docx(doc_file, c_title, c_year):
                         if contains_speaker(r.text):
                             content_detected = True      
                         elif r.fmt.bold:
-                            #if not in_speakers(r_text, speakers):
                             # parse for remainder of paragraph
                             info_text = pg_text.split(r_text)[1].strip(',: ')
                             # check to see if we found something
