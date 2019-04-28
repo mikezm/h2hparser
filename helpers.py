@@ -1,169 +1,45 @@
-from docx import Document
 from datetime import datetime
-import re
-#######
-
-# class HDoc acts as a layer over top the docx xml layout
-# DOCX xml:
-#   paragraph in paragraphs
-#       run in paragraph.runs
-# 
-# Usage: 
-#   takes docx file path, and delimeter
-#   delimeter will always force return or cursor text
-#   doc = HDoc(doc_file, "***") or doc = HDoc(doc_file)
-# 
-# class functions search_for_term and search_for_format will both: 
-#   take: term | TextFormat (class included in this file)
-#   return [[HDocRun], BOOL]
-#       
-#       1:  array of  result from search for term | TextFormat
-#       2:  has the delimiter been found
-class HDocRun:
-    def __init__(self, fmt=None, text=None):
-        self.fmt = fmt
-        self.text = text
-
-class HDoc:
-    def __init__(self, file_path, delimeter=None):
-        doc = Document(file_path)
-        self.pgs = doc.paragraphs
-        self.pgs_len = len(self.pgs)
-        self.index = 0
-        self.run_index = 0
-        self.delimeter = delimeter
-    
-    def __str__(self):
-        return "index: %s of %s" % (self.index, self.pgs_len)
-
-    def delimeter_found(self, txt):
-        if self.delimeter:
-            if self.delimeter in txt:
-                return True
-        return False
-
-    def not_done(self):
-        return self.index < self.pgs_len
-
-    def search_for(self, method, limit=False):
-        delimeter_hit = False
-        matched = False
-        rns=[]
-        run_count = 0
-        pg_text = ""
-        while self.not_done(): 
-            pg = self.pgs[self.index]
-            pg_text += pg.text
-            runs = pg.runs
-            runs_len = len(runs)
-            run = runs[self.run_index]
-            #print(show_run_details(run))
-            while self.run_index < runs_len:               
-                if run.text:
-                    run_count += 1
-                    rn = HDocRun(text=run.text)
-                    rn.fmt = TextFormat(size=12.0)
-                    if run.font.size:
-                        rn.fmt.size=run.font.size.pt
-                        rn.fmt.bold=run.font.bold
-                        rn.fmt.italic=run.font.italic
-                    rns.append(rn)
-                if not matched:
-                    matched = method(run)
-                if not delimeter_hit:
-                    delimeter_hit = self.delimeter_found(run.text)
-
-                self.run_index += 1
-            self.run_index = 0
-            self.index += 1
-            if matched or delimeter_hit or (limit and run_count >= limit):
-                return [rns, pg_text, delimeter_hit]
-            
-            
-
-    def get_next_paragraph(self):
-        if self.not_done(): 
-            pg = self.pgs[self.index]
-            self.index += 1
-            return pg
-        return False
+from schema import Chapter, Article, Speaker, Paragraph
+from hdoc import HDoc, TextFormat
+import re, sys
 
 
-    def get_next_text(self, limit=False):
-        def search_method(r):
-            return True
-        return self.search_for(method=search_method, limit=limit)
+def contains_question(s):
+    p = re.compile('Q:', re.IGNORECASE)
+    return True if p.match(s) else False
 
-    # advance to next 
-    def advance_to_delimeter(self):
-        def search_method(r):
-            return False
-        return self.search_for(method=search_method)
+def contains_speaker(s):
+    res = False
+    t = s.strip(' ')
+    p_simple = re.compile('\w{2,}:')
+    p_info = re.compile('[a-zA-Z0-9, ]{2,}:\Z')
+    m_name = p_simple.match(t)
+    m_info = p_info.match(t)
+    if m_name:
+        res = m_name.group(0)
+    elif m_info:
+        res = m_info.group(0)
+    return res
 
-    def search_for_term(self, term="", limit=False):
-        def search_method(r):
-            found = False
-            if r.text:
-                if term in r.text:
-                    found = True
-            return found
-        return self.search_for(method=search_method, limit=limit)
+def match_speaker_name(s):
+    t = s.strip(',')
+    p = re.compile('(\w{2,}(?:\.)?\s){1,2}(\w{3,})\Z')
+    m = p.match(t)
+    return m.group(0) if m else False
 
-
-    def search_for_fmt(self, fmt, limit=False):
-        def search_method(r):
-            found = False
-            if r.font.size:
-                curr_fmt = TextFormat(size=r.font.size.pt, bold=r.font.bold, italic=r.font.italic)
-                if curr_fmt.is_equal_to(fmt):
-                    found = True
-            return found
-        return self.search_for(method=search_method, limit=limit)
-
-class TextFormat:
-    def __init__(self, size=None, bold=None, italic=None, name=None):
-        self.size = size
-        self.bold = bold
-        self.italic = italic
-        self.name = name
-    
-    def __str__(self):
-        return "size: %s    bold: %s    italic: %s" % (str(self.size), str(self.bold), str(self.italic))
-
-    def is_set(self):
-        return ( self.size!=None and self.bold!=None and self.italic!=None )
-
-    def is_equal_to(self, new):
-        return (self.size == new.size)and (self.bold == new.bold) and (self.italic == new.italic)
-
-#######
-
-# takes a run
-def show_run_details(r):
-    if r.text:
-        if r.font.size:  
-            return """ 
-                size    bold    italic   
-                ----    ----    ------ 
-                %s    %s    %s 
-                -------------------------
-                text: 
-                -----
-                %s    
-            """ % (str(int(r.font.size.pt)), str(r.font.bold), r.font.italic, r.text)
-        else:
-            return """
-                no font info found
-                ------------------
-                text: %s
-                -----
-            """ % r.text
-    return "No Run Text Found:: Line Break?"
+def in_speakers(s, arr):
+    res = False
+    for sp in arr:
+        if s in sp.name:
+            res = True
+            break
+    return res
 
 def get_date(txt):
     p = re.compile('(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|(Nov|Dec)(?:ember)?)(.+?)([1][9][0-9]{2})', re.IGNORECASE)
     qualifier = re.compile('^(late|early)$', re.IGNORECASE)
-    m = p.search(txt)
+    t = txt.replace('Sept', 'Sep')
+    m = p.search(t)
     if m:
         date_string = m.group()
         d = parse_date_string(date_string)
@@ -172,11 +48,7 @@ def get_date(txt):
             if qualifier.search(r):
                 r = ""
             return [d, r]
-    #else:
-    #    print("(get-date) match failed for: " + txt)
     return [None, txt]
-        
-    
 
 def parse_date_string(d_str):
     # regex patterns for date formats
@@ -199,13 +71,10 @@ def parse_date_string(d_str):
         year = d_str.split(months)[1].strip(' ,-')
         month = months.split('-')[0].strip(' ,-')
         date_string = "%s %s" % (month, year)
-        #print("combo month: " + months)
-        #print("new str: " + date_string)
     elif multi_day:
         days = multi_day.group()
         day = days.split(',')[0].strip(', ')
         date_string = d_str.replace(days, day).replace(',', '')
-        #print("multi day: " + date_string)
     else:
         date_string = d_str.replace(',', '')
     
@@ -215,10 +84,9 @@ def parse_date_string(d_str):
     # build strptime date format
     dt_pat = ""
     if short_month:
-        #print("short month: " + date_string)
         dt_pat += "%b"
     elif long_month:
-        #print("long month: " + date_string)
+        
         dt_pat += "%B"
     if day_match:
         dt_pat += " %d"
@@ -231,3 +99,179 @@ def parse_date_string(d_str):
             print("problem date string : " + date_string )
             pass
     return dt
+
+
+def exec_test():
+
+    txts = [
+        "Dec 16, 1988, Foreign Press Center",
+        "Defense Intelligence Agency, winter 1988",
+        "december 1, 1988, Foreign Press Center",
+        "December 01, 1988, Foreign Press Center",
+        "January 1988, Foreign Press Center",
+        "january 1988",
+        "jan 1988",
+        "Feb-Mar, 1988, Wilson Center",
+        "June-July 1988",
+        "March 14,15, 1989, House of Representatives",
+        "Late January, 1988",
+        "Brookings, May 10, 1988",
+        "French Defense Minister, Sept 29, 1988"
+    ]
+    for txt in txts:
+        print("-----------\n%s\n--------\n" % txt)
+        d, r = get_date(txt)
+        if d:
+            print(d)
+            print(r)
+        else:
+            print("no date in line")
+
+    sys.exit(0)
+
+def read_docx(doc_file, c_title, c_year):
+
+    chapter = Chapter(title=c_title, year=c_year)
+
+    doc = HDoc(doc_file, "***")
+
+    # different search formats 
+    headline_fmt = TextFormat(size=16, bold=True, italic=None, name="headline")
+    content_fmt = TextFormat(size=14, name="content")
+
+    runmode = "start"
+    new_article = False
+
+    while doc.not_done():
+ 
+        if runmode == "start":
+            _, pg_text, new_article = doc.advance_to_delimeter()
+            
+            runmode = "new_article"
+                    
+        if runmode ==  "new_article":
+            try:
+                h_res, headline_text, new_article = doc.search_for_fmt(fmt=headline_fmt)
+            except TypeError:
+                pass
+            h_done = False
+            for r in h_res:
+                if r.text:
+                    if r.fmt.is_equal_to(headline_fmt):
+                        h_done = True
+            if h_done:          
+                speakers = []
+                infos = []
+                tags = []
+                pgs = []
+                runmode = "speaker"
+        
+        if runmode == "speaker":
+            content_detected = False
+            r_text = ""
+            s_res, pg_text, new_article = doc.get_next_text()
+            if s_res:
+                for r in s_res:    
+                    if r.text:
+                        r_text = r.text.strip(',: ')
+                        if contains_speaker(r.text):
+                            content_detected = True      
+                        elif r.fmt.bold:
+                            #if not in_speakers(r_text, speakers):
+                            # parse for remainder of paragraph
+                            info_text = pg_text.split(r_text)[1].strip(',: ')
+                            # check to see if we found something
+                            if info_text and info_text!=' ':
+                                # does remaining string contain a date?
+                                date_time, info_rem = get_date(info_text)
+                                if  date_time:
+                                    if info_rem and (info_rem!=' ') and (info_rem not in infos):
+                                        infos.append(info_rem)
+                                    # move to the next runmode
+                                    runmode = "content"                                
+                                else:
+                                    # no date matched. Add as info string
+                                    if not in_speakers(info_text, speakers):
+                                        speakers.append(Speaker(name=r_text, affiliation=info_text))
+                            # no extra text, just a speaker
+                            else:
+                                if match_speaker_name(r_text):
+                                    if not in_speakers(r_text, speakers):
+                                        speakers.append(Speaker(name=r_text))
+                                else:
+                                    if r_text not in infos:
+                                        infos.append(r_text)
+                                    
+                        # have we reached the content yet?        
+                        elif r.fmt.is_equal_to(content_fmt) or r.fmt.italic or r.fmt.size==14:
+                            content_detected = True
+                        # should be the last date paragraph 
+                        else:
+                            # is there a date in the string?
+                            date_time, info_rem = get_date(r_text)
+                            if date_time:
+                                if info_rem and (info_rem!=' ') and (info_rem not in infos):
+                                    infos.append(info_rem)
+                                runmode = "content"
+                            else:
+                                # if no date in string. speaker or info
+                                sp_string = match_speaker_name(r_text)
+                                if sp_string:
+                                    sp_text = sp_string.strip(',: ')
+                                    sp_aff = pg_text.strip(sp_text).strip(',: ')
+                                    if not in_speakers(sp_text, speakers):
+                                        speakers.append(Speaker(name=sp_text, affiliation=sp_aff))
+                                else:
+                                    other_text = pg_text.strip(', ')
+                                    if other_text not in infos:
+                                        infos.append(other_text)
+                # after runs are checked
+                # if we reached the content already. Back up one pg and proceed. 
+                if content_detected:
+                    doc.index -= 1
+                    runmode = "content"
+            
+            
+        if runmode == "content":
+            pg = doc.get_next_paragraph()
+
+            if pg and pg.text: 
+                is_comment = True
+                append_pg = False
+                for r in pg.runs:
+                    if r.text:
+                        if "***" in r.text:
+                            new_article = True
+                        elif "tags:" in r.text:
+                            tags = [tag.strip() for tag in pg.text.strip('[]tags:').split(',') if (tag and tag!=' ')]
+                        else:
+                            if "tags:" not in pg.text:
+                                append_pg = True
+                            if not r.font.italic:
+                                is_comment = False
+                if append_pg:
+                    has_speaker = contains_speaker(pg.text)
+                    # does the pg have a speaker at the beginning
+                    if has_speaker:
+                        body_speaker_info = None
+                        body_speaker_text = has_speaker.strip(':')
+                        # does the speaker contain info as well as the name?
+                        if ',' in body_speaker_text:
+                            body_speaker_name = body_speaker_text.split(',')[0].strip(',: ')
+                            body_speaker_info = body_speaker_text.split(',')[1].strip(',: ')
+                        else:
+                            body_speaker_name = body_speaker_text
+                        speaker_pg_text = pg.text.strip(has_speaker+' ')
+                        if not in_speakers(body_speaker_name, speakers):
+                            speakers.append(Speaker(name=body_speaker_name, affiliation=body_speaker_info))
+                        pgs.append(Paragraph(text=speaker_pg_text, speaker=Speaker(name=body_speaker_name, affiliation=body_speaker_info)))
+                    elif contains_question(pg.text):
+                        pgs.append(Paragraph(text=pg.text, question=True))
+                    else:
+                        pgs.append(Paragraph(text=pg.text, comment=is_comment))
+                            
+        if new_article:
+            chapter.articles.append(Article(headline=headline_text, date=date_time, speakers=speakers, info=infos, paragraphs=pgs, tags=tags))
+            runmode = "new_article"
+
+    return chapter
