@@ -2,7 +2,7 @@
 
 This project was developed to parse DOCX files. The application will read the files and extracts relevant information. Once parsed, the app uploads the data to the H2HAPI.
 
-## Build
+## Install
 
 `git clone https://github.com/mikezm/h2hparser.git`  
 `cd h2hparser`  
