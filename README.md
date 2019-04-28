@@ -10,8 +10,8 @@ This project was developed to parse DOCX files. The application will read the fi
 
 ## Usage
 
-`./app.py -y <Chapter Year> -c <Chapter Title> -f <Path To DocX File>`  
-`./app.py -y 1988 -c "THE WANING OF THE COLD WAR" -f ~/H2HDocs/H2H-chapter-one-1988.docx`  
+`python ./app.py -y <Chapter Year> -c <Chapter Title> -f <Path To DocX File>`  
+`python ./app.py -y 1988 -c "THE WANING OF THE COLD WAR" -f ~/H2HDocs/H2H-chapter-one-1988.docx`  
 
 ## Chapter Schema
 
