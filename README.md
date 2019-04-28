@@ -15,23 +15,23 @@ This project was developed to parse DOCX files. The application will read the fi
 
 ## Schema
 
-Chapter
-  - Title
-  - Year
-  - Articles (array of Class Article)
-    -- Article --
-    -- headline (required)
-    -- speakers (required)
-      --- Speaker ---
-      --- name
-      --- affiliation
-    -- date (required)
-    -- info texts (optional)
-      -- text ---
-    -- content (array of paragraphs)
-      --- Paragraph ---
-      --- text (required)
-      --- speaker :: <BOLD-Name>: (optional)
-      --- Question :: <BOLD>Q: (optional)
-      --- Comment (True|False)
-    -- tags (array of tags)
+### Chapter
+    - **Title**
+    - **Year**
+    - **Articles** *(array of Class **Article**)*
+      *Article*
+      - headline
+      - speakers *(array of Class **Speaker**)*
+          *Speaker*
+          - name
+          - affiliation
+      - **Date** 
+      - **Info texts** *(array of strings)*
+          - text *(string)*
+      - **Content** *(array of Class Paragraph)*
+          *Paragraph*
+          - Text     : *(required)*
+          - Speaker  : *(optional)*
+          - Question : *(optional)*
+          - Comment  : *(True|False)*
+      - **Tags** *(array of tags)*
