@@ -4,9 +4,9 @@ This project was developed to parse DOCX files. The application will read the fi
 
 ## Build
 
-`git clone https://github.com/mikezm/docx-parser-halfway-to-history.git`
-`cd docx-parser-halfway-to-history`
-`pip install requirements.txt`
+`git clone https://github.com/mikezm/docx-parser-halfway-to-history.git`  
+`cd docx-parser-halfway-to-history`  
+`pip install requirements.txt`  
 
 ## Usage
 
