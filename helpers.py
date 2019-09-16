@@ -169,7 +169,11 @@ def read_docx(doc_file, c_title, c_year):
         if runmode == "speaker":
             content_detected = False
             r_text = ""
-            s_res, pg_text, new_article = doc.get_next_text()
+            try:
+                s_res, pg_text, new_article = doc.get_next_text()
+            except TypeError:
+                s_res = False
+                
             if s_res:
                 for r in s_res:    
                     if r.text:
@@ -178,7 +182,10 @@ def read_docx(doc_file, c_title, c_year):
                             content_detected = True      
                         elif r.fmt.bold:
                             # parse for remainder of paragraph
-                            info_text = pg_text.split(r_text)[1].strip(',: ')
+                            try:
+                                info_text = pg_text.split(r_text)[1].strip(',: ')
+                            except ValueError:
+                                info_text = pg_text.strip(',: ')
                             # check to see if we found something
                             if info_text and info_text!=' ':
                                 # does remaining string contain a date?
@@ -263,7 +270,7 @@ def read_docx(doc_file, c_title, c_year):
                         speaker_pg_text = pg.text.strip(has_speaker+' ')
                         if not in_speakers(body_speaker_name, speakers):
                             speakers.append(Speaker(name=body_speaker_name, affiliation=body_speaker_info))
-                        pgs.append(Paragraph(text=speaker_pg_text, speaker=Speaker(name=body_speaker_name, affiliation=body_speaker_info)))
+                        pgs.append(Paragraph(text=speaker_pg_text, speaker=body_speaker_name))
                     elif contains_question(pg.text):
                         pgs.append(Paragraph(text=pg.text, question=True))
                     else:

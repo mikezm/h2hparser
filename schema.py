@@ -44,6 +44,9 @@ class Chapter:
             if debug:
                 for pg in a.paragraphs:
                     print(pg)
+
+    def get_articles(self):
+        return self.articles
             
 
 class Article:
@@ -72,6 +75,22 @@ class Article:
                 self.info.append(info_txt)
                 return True
         return False
+    
+    def json_object(self):
+        dt = self.date.isoformat() if self.date else None
+        result = {
+            'headline': self.headline,
+            'article_date': dt,
+            'speakers': [],
+            'info': self.info,
+            'tags': self.tags,
+            'paragraphs': []
+        }
+        for s in self.speakers:
+            result['speakers'].append(s.json_object())
+        for p in self.paragraphs:
+            result['paragraphs'].append(p.json_object())
+        return result
 
 class Speaker:
     def __init__(self, name=None, affiliation=None):
@@ -81,9 +100,15 @@ class Speaker:
     def __str__(self):
         return "%s -> %s" % (self.name, self.affiliation)
 
+    def json_object(self):
+        return {
+            'speaker_name': self.name,
+            'affiliation': self.affiliation
+        }
+
 class Paragraph:
     def __init__(self, text=None, speaker=None, question=False, comment=False):
-        self.text = text
+        self.text = text if text != '' else None
         self.speaker = speaker
         self.question = question
         self.comment = comment
@@ -95,3 +120,11 @@ class Paragraph:
             --- comment  : %s
             --- text     : %s
         """ % (self.speaker, str(self.question), str(self.comment), self.text)
+
+    def json_object(self):
+        return {
+            'text': self.text,
+            'speaker': self.speaker,
+            'question': self.question,
+            'comment': self.comment
+        }

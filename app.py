@@ -1,5 +1,6 @@
 import sys, argparse, os
 from helpers import read_docx, exec_test
+from bridge.api import post_new_article
 
 desc = """ Parses docx file to Halfway To Home document db """
 p = argparse.ArgumentParser(description=desc)
@@ -10,8 +11,6 @@ p.add_argument('-t', action='store_true', dest='run_test')
 
 def run():
     args = p.parse_args()
-    if args.run_test:
-        exec_test()
     if not args.file:
         print("must provide a file name")
         sys.exit(1)
@@ -19,13 +18,14 @@ def run():
     f = args.file
     if os.path.isfile(f):
         chap = read_docx(f, args.chapter_title, args.chapter_year)
-        chap.show_contents(debug=False)
-    # open file
-    # parse file into documents
-    # parse documents into data structure
-    # convert data to db schema
-    # connect to cloud data store
-    # upload documents
+        if args.run_test:
+            chap.show_contents(debug=False)
+        else:
+            articles = chap.get_articles()
+            for article in articles:
+                req = article.json_object()        
+                res = post_new_article(req)
+                print(res)
 
     sys.exit(0)
 

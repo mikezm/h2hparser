@@ -6,7 +6,7 @@ This project was developed to parse DOCX files. The application will read the fi
 
 `git clone https://github.com/mikezm/h2hparser.git`  
 `cd h2hparser`  
-`pip install requirements.txt`  
+`pip install -r requirements.txt`  
 
 ## Usage
 

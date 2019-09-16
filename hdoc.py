@@ -49,9 +49,10 @@ class HDoc:
             pg_text += pg.text
             runs = pg.runs
             runs_len = len(runs)
-            run = runs[self.run_index]
-            #print(show_run_details(run))
-            while self.run_index < runs_len:               
+            
+            while self.run_index < runs_len: 
+                run = runs[self.run_index]  
+                #print(show_run_details(run))            
                 if run.text:
                     run_count += 1
                     rn = HDocRun(text=run.text)
@@ -82,7 +83,8 @@ class HDoc:
 
     def get_next_text(self, limit=False):
         def search_method(r):
-            return True
+            if r.text and r.text != '':
+                return True
         return self.search_for(method=search_method, limit=limit)
 
     # advance to next 
