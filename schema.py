@@ -104,7 +104,7 @@ class Speaker:
         return {
             'speaker_name': self.name,
             'affiliation': self.affiliation
-        }
+        } if self.name else {}
 
 class Paragraph:
     def __init__(self, text=None, speaker=None, question=False, comment=False):
